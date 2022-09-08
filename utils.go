@@ -1,9 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+
+	"github.com/spaolacci/murmur3"
+)
 
 // 检查牌能否放在另一张牌上
 func CanPlaceOn(card, target int) bool {
+	if card == 0 || target == 0 {
+		return false
+	}
 	if card%100+1 != target%100 {
 		return false
 	}
@@ -15,6 +24,9 @@ func CanPlaceOn(card, target int) bool {
 
 // 检查能否放到home区
 func CanPlaceHome(game *GameStruct, card int) bool {
+	if card < 100 {
+		return false
+	}
 	color := card/100 - 1
 	if game.Home[color] == 0 && card%100 == 1 {
 		return true
@@ -73,4 +85,19 @@ func PrintGame(game *GameStruct) {
 			break
 		}
 	}
+}
+
+func murmurUint64(val string) uint64 {
+	hasher := murmur3.New64()
+	hasher.Write([]byte(val))
+	return hasher.Sum64()
+}
+
+func HashGame(game *GameStruct) string {
+	text, err := json.Marshal(game)
+	if err != nil {
+		panic("Hash Game Error")
+	}
+
+	return strconv.Itoa(int(murmurUint64(string(text))))
 }

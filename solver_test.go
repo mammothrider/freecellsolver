@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func CreateTestGame() GameStruct {
+func CreateNewGame() GameStruct {
 	var game GameStruct = GameStruct{
 		Card: [8][]int{
 			{312, 111, 107, 407, 311, 207, 408},
@@ -19,6 +19,24 @@ func CreateTestGame() GameStruct {
 		},
 	}
 	return game
+}
+
+func CreateLateGame() GameStruct {
+	var game GameStruct = GameStruct{
+		Home: [4]int{112, 213, 313, 413},
+		Card: [8][]int{
+			{113},
+		},
+	}
+	return game
+}
+
+func TestIsGameFinished(t *testing.T) {
+	game := CreateLateGame()
+	act := FindHomeAction(&game)
+	game = DoAction(&game, &act[0])
+	PrintGame(&game)
+	fmt.Println(IsGameFinished(&game))
 }
 
 func TestCanPlaceOn(t *testing.T) {
@@ -43,6 +61,16 @@ func TestCanPlaceOn(t *testing.T) {
 			target: 203,
 			result: true,
 		},
+		{
+			card:   0,
+			target: 101,
+			result: false,
+		},
+		{
+			card:   101,
+			target: 0,
+			result: false,
+		},
 	}
 
 	for _, c := range testCase {
@@ -53,7 +81,7 @@ func TestCanPlaceOn(t *testing.T) {
 }
 
 func TestCanPlaceHome(t *testing.T) {
-	game := CreateTestGame()
+	game := CreateNewGame()
 	if !CanPlaceHome(&game, 101) {
 		t.Error("101")
 	}
@@ -64,10 +92,13 @@ func TestCanPlaceHome(t *testing.T) {
 	if CanPlaceHome(&game, 202) {
 		t.Error("202")
 	}
+	if CanPlaceHome(&game, 0) {
+		t.Error("0")
+	}
 }
 
 func TestFindHomeAction(t *testing.T) {
-	game := CreateTestGame()
+	game := CreateNewGame()
 	game.Card[7] = append(game.Card[7], 101)
 	result := FindHomeAction(&game)
 	for _, r := range result {
@@ -76,7 +107,7 @@ func TestFindHomeAction(t *testing.T) {
 }
 
 func TestFindFreeAction(t *testing.T) {
-	game := CreateTestGame()
+	game := CreateNewGame()
 	result := FindFreeAction(&game)
 	for _, r := range result {
 		fmt.Println(game.Card[r.FCol][r.FRow], r.Action, r.TCol)
@@ -84,7 +115,7 @@ func TestFindFreeAction(t *testing.T) {
 }
 
 func TestFindMoveAction(t *testing.T) {
-	game := CreateTestGame()
+	game := CreateNewGame()
 	result := FindMoveAction(&game)
 	for _, r := range result {
 		fmt.Println(game.Card[r.FCol][r.FRow], r.Action, r.TCol)
@@ -92,22 +123,53 @@ func TestFindMoveAction(t *testing.T) {
 }
 
 func TestDoAction(t *testing.T) {
-	game := CreateTestGame()
+	fmt.Println("=============Test Move Card================")
+	var game GameStruct
+	game = CreateNewGame()
 	result := FindMoveAction(&game)
-	rgame := DoAction(game, result[0])
+	rgame := DoAction(&game, &result[0])
 	PrintGame(&rgame)
 
+	fmt.Println("=============Test Move Home================")
+	game = CreateNewGame()
 	game.Card[7] = append(game.Card[7], 101)
 	result = FindHomeAction(&game)
-	rgame = DoAction(game, result[0])
+	rgame = DoAction(&game, &result[0])
 	PrintGame(&rgame)
 
+	fmt.Println("=============Test Move Free================")
+	game = CreateNewGame()
 	result = FindFreeAction(&game)
-	rgame = DoAction(game, result[0])
+	rgame = DoAction(&game, &result[0])
+	PrintGame(&rgame)
+
+	fmt.Println("=============Test Free Home================")
+	game = CreateNewGame()
+	game.Free[3] = 101
+	result = FindHomeAction(&game)
+	rgame = DoAction(&game, &result[0])
+	PrintGame(&rgame)
+
+	fmt.Println("=============Test Free Move================")
+	game = CreateNewGame()
+	game.Free[3] = 307
+	result = FindMoveAction(&game)
+	rgame = DoAction(&game, &result[0])
 	PrintGame(&rgame)
 }
 
 func TestPrintGame(t *testing.T) {
-	game := CreateTestGame()
+	game := CreateNewGame()
 	PrintGame(&game)
+}
+
+func TestSolver(t *testing.T) {
+	game := CreateLateGame()
+	PrintGame(&game)
+	action := Solver(&game)
+	for i, a := range action {
+		fmt.Printf("\nStep %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
+		game = DoAction(&game, &a)
+		PrintGame(&game)
+	}
 }
