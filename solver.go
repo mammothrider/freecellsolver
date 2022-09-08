@@ -51,6 +51,11 @@ func FindFreeAction(game *GameStruct) (result []Action) {
 				continue
 			}
 
+			// 序列长度大于空白，禁止移动到Free区
+			if GetSequnceLength(game, j) > 4-i {
+				continue
+			}
+
 			result = append(result, Action{
 				FCol:   j,
 				FRow:   leng - 1,
@@ -148,7 +153,7 @@ func DoAction(game *GameStruct, action *Action) (result GameStruct) {
 	} else if action.Action == "Move" {
 		cards := result.Card[action.FCol][action.FRow:]
 		result.Card[action.FCol] = result.Card[action.FCol][:action.FRow]
-		result.Card[action.TCol] = append(result.Card[action.TCol], cards...)
+		result.Card[action.TCol] = CombineSlices(result.Card[action.TCol], cards)
 	} else if action.Action == "FreeHome" {
 		card := result.Free[action.FCol]
 		result.Free[action.FCol] = 0
@@ -156,7 +161,7 @@ func DoAction(game *GameStruct, action *Action) (result GameStruct) {
 	} else if action.Action == "FreeMove" {
 		card := result.Free[action.FCol]
 		result.Free[action.FCol] = 0
-		result.Card[action.TCol] = append(result.Card[action.TCol], card)
+		result.Card[action.TCol] = CombineSlices(result.Card[action.TCol], []int{card})
 	}
 
 	return
@@ -164,45 +169,59 @@ func DoAction(game *GameStruct, action *Action) (result GameStruct) {
 
 // 标记访问记录
 var Mark map[string]int = make(map[string]int)
+var SolverCount int = 0
 
-func Solver(game *GameStruct) (actionStep []Action) {
+func Solver(game *GameStruct) []Action {
 	/*
 		深搜
 		1、按Home，Move，Free行动进行搜索
 		2、增加全局缓存避免相同场景，并记录结果，记得加锁
 		3、找到结果，则返回行动链
-	*/
 
+		返回倒序
+	*/
 	// 不重复查找
 	sign := HashGame(game)
 	if _, ok := Mark[sign]; ok {
-		return
+		return nil
 	}
 	Mark[sign] = 1
 
-	var act []Action
-	act = append(act, FindHomeAction(game)...)
-	act = append(act, FindMoveAction(game)...)
-	act = append(act, FindFreeAction(game)...)
-
-	for _, a := range act {
-		tmpGame := DoAction(game, &a)
-
-		// last step
-		if IsGameFinished(&tmpGame) {
-			actionStep = append(actionStep, a)
-			return
-		}
-
-		// search deeper
-		tmpResult := Solver(&tmpGame)
-		if len(tmpResult) > 0 {
-			actionStep = append(tmpResult, a)
-			return
-		}
+	SolverCount++
+	if SolverCount > 50000 {
+		return nil
 	}
 
-	return
+	TrySolve := func(act []Action) []Action {
+		for _, a := range act {
+			tmpGame := DoAction(game, &a)
+
+			// last step
+			if IsGameFinished(&tmpGame) {
+				return []Action{a}
+			}
+
+			// search deeper
+			tmpResult := Solver(&tmpGame)
+			if len(tmpResult) > 0 {
+				return append(tmpResult, a)
+			}
+		}
+		return nil
+	}
+
+	var act []Action
+	if act = TrySolve(FindHomeAction(game)); act != nil {
+		return act
+	}
+	if act = TrySolve(FindMoveAction(game)); act != nil {
+		return act
+	}
+	if act = TrySolve(FindFreeAction(game)); act != nil {
+		return act
+	}
+
+	return nil
 }
 
 func main() {
