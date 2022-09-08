@@ -52,11 +52,62 @@ func TestCanPlaceOn(t *testing.T) {
 	}
 }
 
-func TestFindLegalAction(t *testing.T) {
+func TestCanPlaceHome(t *testing.T) {
 	game := CreateTestGame()
-	result := FindLegalAction(game)
-	for _, r := range result {
-		tar := game.Card[r.TCol]
-		fmt.Println(game.Card[r.FCol][r.FRow], r.Action, tar[len(tar)-1])
+	if !CanPlaceHome(&game, 101) {
+		t.Error("101")
 	}
+	game.Home[0] = 101
+	if !CanPlaceHome(&game, 102) {
+		t.Error("102")
+	}
+	if CanPlaceHome(&game, 202) {
+		t.Error("202")
+	}
+}
+
+func TestFindHomeAction(t *testing.T) {
+	game := CreateTestGame()
+	game.Card[7] = append(game.Card[7], 101)
+	result := FindHomeAction(&game)
+	for _, r := range result {
+		fmt.Println(game.Card[r.FCol][r.FRow], r.Action, r.TCol+1)
+	}
+}
+
+func TestFindFreeAction(t *testing.T) {
+	game := CreateTestGame()
+	result := FindFreeAction(&game)
+	for _, r := range result {
+		fmt.Println(game.Card[r.FCol][r.FRow], r.Action, r.TCol)
+	}
+}
+
+func TestFindMoveAction(t *testing.T) {
+	game := CreateTestGame()
+	result := FindMoveAction(&game)
+	for _, r := range result {
+		fmt.Println(game.Card[r.FCol][r.FRow], r.Action, r.TCol)
+	}
+}
+
+func TestDoAction(t *testing.T) {
+	game := CreateTestGame()
+	result := FindMoveAction(&game)
+	rgame := DoAction(game, result[0])
+	PrintGame(&rgame)
+
+	game.Card[7] = append(game.Card[7], 101)
+	result = FindHomeAction(&game)
+	rgame = DoAction(game, result[0])
+	PrintGame(&rgame)
+
+	result = FindFreeAction(&game)
+	rgame = DoAction(game, result[0])
+	PrintGame(&rgame)
+}
+
+func TestPrintGame(t *testing.T) {
+	game := CreateTestGame()
+	PrintGame(&game)
 }
