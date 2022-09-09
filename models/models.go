@@ -1,4 +1,4 @@
-package main
+package models
 
 // 黑红梅方,黑桃k=113
 // 右侧是最外

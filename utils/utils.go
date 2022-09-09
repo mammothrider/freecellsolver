@@ -1,8 +1,9 @@
-package main
+package utils
 
 import (
 	"encoding/json"
 	"fmt"
+	"freecellsolver/models"
 	"strconv"
 
 	"github.com/spaolacci/murmur3"
@@ -23,7 +24,7 @@ func CanPlaceOn(card, target int) bool {
 }
 
 // 检查能否放到home区
-func CanPlaceHome(game *GameStruct, card int) bool {
+func CanPlaceHome(game *models.GameStruct, card int) bool {
 	if card < 100 {
 		return false
 	}
@@ -35,7 +36,7 @@ func CanPlaceHome(game *GameStruct, card int) bool {
 }
 
 // 检查是否有足够的空间移动牌
-func CanMove(game *GameStruct, count int) bool {
+func CanMove(game *models.GameStruct, count int) bool {
 	free := 0
 	empty := 0
 	for _, c := range game.Free {
@@ -51,7 +52,7 @@ func CanMove(game *GameStruct, count int) bool {
 	return (free+1)*((1+empty)*empty/2+1) >= count
 }
 
-func IsGameFinished(game *GameStruct) bool {
+func IsGameFinished(game *models.GameStruct) bool {
 	for _, c := range game.Home {
 		if c%100 != 13 {
 			return false
@@ -60,7 +61,7 @@ func IsGameFinished(game *GameStruct) bool {
 	return true
 }
 
-func GetSequnceLength(game *GameStruct, rol int) int {
+func GetSequnceLength(game *models.GameStruct, rol int) int {
 	group := game.Card[rol]
 	count := 0
 	last := 0
@@ -75,7 +76,7 @@ func GetSequnceLength(game *GameStruct, rol int) int {
 	return count
 }
 
-func PrintGame(game *GameStruct) {
+func PrintGame(game *models.GameStruct) {
 	for _, c := range game.Free {
 		fmt.Printf("%3d ", c)
 	}
@@ -108,7 +109,7 @@ func murmurUint64(val string) uint64 {
 	return hasher.Sum64()
 }
 
-func HashGame(game *GameStruct) string {
+func HashGame(game *models.GameStruct) string {
 	cgame := *game
 	for i := 0; i < 4; i++ {
 		for j := i; j < 4; j++ {
@@ -133,7 +134,7 @@ func HashGame(game *GameStruct) string {
 	return strconv.Itoa(int(murmurUint64(string(text))))
 }
 
-func CheckCard(game *GameStruct, card int) bool {
+func CheckCard(game *models.GameStruct, card int) bool {
 	count := 0
 	if card <= game.Home[card/100-1] {
 		count++
@@ -153,7 +154,7 @@ func CheckCard(game *GameStruct, card int) bool {
 	return count == 1
 }
 
-func CheckLegal(game *GameStruct) {
+func CheckLegal(game *models.GameStruct) {
 	for j := 1; j < 5; j++ {
 		for i := 1; i < 14; i++ {
 			card := 100*j + i
@@ -165,7 +166,7 @@ func CheckLegal(game *GameStruct) {
 	}
 }
 
-func CheckEqual(game1, game2 *GameStruct) bool {
+func CheckEqual(game1, game2 *models.GameStruct) bool {
 	if game1.Free != game2.Free {
 		return false
 	}
@@ -176,7 +177,7 @@ func CheckEqual(game1, game2 *GameStruct) bool {
 		if len(game1.Card[i]) != len(game2.Card[i]) {
 			return false
 		}
-		for j, _ := range g {
+		for j := range g {
 			if game1.Card[i][j] != game2.Card[i][j] {
 				return false
 			}
@@ -197,12 +198,12 @@ func CombineSlices(slices ...[]int) []int {
 	return a
 }
 
-func CombineActionSlices(slices ...[]Action) []Action {
+func CombineActionSlices(slices ...[]models.Action) []models.Action {
 	count := 0
 	for _, s := range slices {
 		count += len(s)
 	}
-	a := make([]Action, 0, count)
+	a := make([]models.Action, 0, count)
 	for _, s := range slices {
 		a = append(a, s...)
 	}

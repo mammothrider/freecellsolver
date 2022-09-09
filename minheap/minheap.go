@@ -1,10 +1,12 @@
-package main
+package minheap
+
+import "freecellsolver/models"
 
 type Node struct {
-	Game   *GameStruct // 当前场面
-	Action []Action    // 之前的行动
-	Score  int         // 目前分数
-	Move   int         // 行动数
+	Game   *models.GameStruct // 当前场面
+	Action []models.Action    // 之前的行动
+	Score  int                // 目前分数
+	Move   int                // 行动数
 }
 
 type MinHeap struct {

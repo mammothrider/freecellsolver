@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"freecellsolver/models"
+	"freecellsolver/utils"
 	"testing"
 	"time"
 )
 
-func CreateNewGame() GameStruct {
-	var game GameStruct = GameStruct{
+func CreateNewGame() models.GameStruct {
+	var game models.GameStruct = models.GameStruct{
 		Card: [8][]int{
 			{312, 111, 107, 407, 311, 207, 408},
 			{304, 211, 302, 309, 208, 106, 406},
@@ -22,8 +24,8 @@ func CreateNewGame() GameStruct {
 	return game
 }
 
-func CreateMiddleGame() GameStruct {
-	var game GameStruct = GameStruct{
+func CreateMiddleGame() models.GameStruct {
+	var game models.GameStruct = models.GameStruct{
 		Free: [4]int{413, 308, 209, 0},
 		Home: [4]int{103, 202, 302, 403},
 		Card: [8][]int{
@@ -40,8 +42,8 @@ func CreateMiddleGame() GameStruct {
 	return game
 }
 
-func CreateLateGame() GameStruct {
-	var game GameStruct = GameStruct{
+func CreateLateGame() models.GameStruct {
+	var game models.GameStruct = models.GameStruct{
 		Home: [4]int{112, 213, 313, 413},
 		Card: [8][]int{
 			{113},
@@ -54,8 +56,8 @@ func TestIsGameFinished(t *testing.T) {
 	game := CreateLateGame()
 	act := FindHomeAction(&game)
 	game = DoAction(&game, &act[0])
-	PrintGame(&game)
-	fmt.Println(IsGameFinished(&game))
+	utils.PrintGame(&game)
+	fmt.Println(utils.IsGameFinished(&game))
 }
 
 func TestCanPlaceOn(t *testing.T) {
@@ -93,7 +95,7 @@ func TestCanPlaceOn(t *testing.T) {
 	}
 
 	for _, c := range testCase {
-		if CanPlaceOn(c.card, c.target) != c.result {
+		if utils.CanPlaceOn(c.card, c.target) != c.result {
 			t.Error(c)
 		}
 	}
@@ -101,17 +103,17 @@ func TestCanPlaceOn(t *testing.T) {
 
 func TestCanPlaceHome(t *testing.T) {
 	game := CreateNewGame()
-	if !CanPlaceHome(&game, 101) {
+	if !utils.CanPlaceHome(&game, 101) {
 		t.Error("101")
 	}
 	game.Home[0] = 101
-	if !CanPlaceHome(&game, 102) {
+	if !utils.CanPlaceHome(&game, 102) {
 		t.Error("102")
 	}
-	if CanPlaceHome(&game, 202) {
+	if utils.CanPlaceHome(&game, 202) {
 		t.Error("202")
 	}
-	if CanPlaceHome(&game, 0) {
+	if utils.CanPlaceHome(&game, 0) {
 		t.Error("0")
 	}
 }
@@ -119,14 +121,14 @@ func TestCanPlaceHome(t *testing.T) {
 func TestFindHomeAction(t *testing.T) {
 	game := CreateNewGame()
 	game.Card[7] = append(game.Card[7], 101)
-	PrintGame(&game)
+	utils.PrintGame(&game)
 	result := FindHomeAction(&game)
 	for _, r := range result {
 		fmt.Println(game.Card[r.FCol][r.FRow], r.Action, r.TCol+1)
 	}
 
 	game = CreateMiddleGame()
-	PrintGame(&game)
+	utils.PrintGame(&game)
 	result = FindHomeAction(&game)
 	for _, r := range result {
 		fmt.Printf("%8s From %d, %d To %d\n", r.Action, r.FCol, r.FRow, r.TCol)
@@ -152,22 +154,22 @@ func TestFindMoveAction(t *testing.T) {
 
 func TestGetSeq(t *testing.T) {
 	game := CreateMiddleGame()
-	PrintGame(&game)
-	fmt.Println(GetSequnceLength(&game, 2))
-	fmt.Println(GetSequnceLength(&game, 3))
+	utils.PrintGame(&game)
+	fmt.Println(utils.GetSequnceLength(&game, 2))
+	fmt.Println(utils.GetSequnceLength(&game, 3))
 }
 
 func TestDoAction(t *testing.T) {
 	fmt.Println("=============Test Move Card================")
-	var game, compareGame GameStruct
+	var game, compareGame models.GameStruct
 	game = CreateNewGame()
 	compareGame = game
 	result := FindMoveAction(&game)
 	rgame := DoAction(&game, &result[0])
-	PrintGame(&rgame)
-	if !CheckEqual(&game, &compareGame) {
+	utils.PrintGame(&rgame)
+	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("Move Change")
-		PrintGame(&game)
+		utils.PrintGame(&game)
 		return
 	}
 
@@ -177,10 +179,10 @@ func TestDoAction(t *testing.T) {
 	compareGame = game
 	result = FindHomeAction(&game)
 	rgame = DoAction(&game, &result[0])
-	PrintGame(&rgame)
-	if !CheckEqual(&game, &compareGame) {
+	utils.PrintGame(&rgame)
+	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("Home Change")
-		PrintGame(&game)
+		utils.PrintGame(&game)
 		return
 	}
 
@@ -189,10 +191,10 @@ func TestDoAction(t *testing.T) {
 	compareGame = game
 	result = FindFreeAction(&game)
 	rgame = DoAction(&game, &result[0])
-	PrintGame(&rgame)
-	if !CheckEqual(&game, &compareGame) {
+	utils.PrintGame(&rgame)
+	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("Free Change")
-		PrintGame(&game)
+		utils.PrintGame(&game)
 		return
 	}
 
@@ -202,10 +204,10 @@ func TestDoAction(t *testing.T) {
 	compareGame = game
 	result = FindHomeAction(&game)
 	rgame = DoAction(&game, &result[0])
-	PrintGame(&rgame)
-	if !CheckEqual(&game, &compareGame) {
+	utils.PrintGame(&rgame)
+	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("FreeHome Change")
-		PrintGame(&game)
+		utils.PrintGame(&game)
 		return
 	}
 
@@ -215,48 +217,48 @@ func TestDoAction(t *testing.T) {
 	compareGame = game
 	result = FindMoveAction(&game)
 	rgame = DoAction(&game, &result[0])
-	PrintGame(&rgame)
-	if !CheckEqual(&game, &compareGame) {
+	utils.PrintGame(&rgame)
+	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("FreeMove Change")
-		PrintGame(&game)
+		utils.PrintGame(&game)
 		return
 	}
 }
 
 func TestPrintGame(t *testing.T) {
 	game := CreateNewGame()
-	PrintGame(&game)
+	utils.PrintGame(&game)
 }
 
 func TestLateSolver(t *testing.T) {
 	game := CreateLateGame()
-	PrintGame(&game)
+	utils.PrintGame(&game)
 	action := DFSSolver(&game)
 	for i, a := range action {
 		fmt.Printf("\nStep %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		PrintGame(&game)
+		utils.PrintGame(&game)
 	}
 }
 
 func TestMiddleSolver(t *testing.T) {
 	game := CreateMiddleGame()
-	CheckLegal(&game)
-	PrintGame(&game)
+	utils.CheckLegal(&game)
+	utils.PrintGame(&game)
 	action := DFSSolver(&game)
 	fmt.Println(SolverCount)
 	for i := len(action) - 1; i >= 0; i-- {
 		a := action[i]
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		// PrintGame(&game)
+		// utils.PrintGame(&game)
 	}
 }
 
 func TestNewGameSolver(t *testing.T) {
 	game := CreateNewGame()
-	CheckLegal(&game)
-	PrintGame(&game)
+	utils.CheckLegal(&game)
+	utils.PrintGame(&game)
 	action := DFSSolver(&game)
 	fmt.Println(SolverCount)
 	for i := len(action) - 1; i >= 0; i-- {
@@ -264,7 +266,7 @@ func TestNewGameSolver(t *testing.T) {
 		count := len(action) - i
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", count, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		PrintGame(&game)
+		utils.PrintGame(&game)
 	}
 }
 
@@ -280,25 +282,25 @@ func TestSlice(t *testing.T) {
 
 func TestBFSLateSolver(t *testing.T) {
 	game := CreateLateGame()
-	PrintGame(&game)
+	utils.PrintGame(&game)
 	action := BestFirstSolver(&game)
 	for i, a := range action {
 		fmt.Printf("\nStep %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		PrintGame(&game)
+		utils.PrintGame(&game)
 	}
 }
 
 func TestBFSMiddleSolver(t *testing.T) {
 	game := CreateMiddleGame()
-	CheckLegal(&game)
-	PrintGame(&game)
+	utils.CheckLegal(&game)
+	utils.PrintGame(&game)
 	action := BestFirstSolver(&game)
 	fmt.Println(SolverCount)
 	for i, a := range action {
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		PrintGame(&game)
+		utils.PrintGame(&game)
 
 		time.Sleep(250 * time.Millisecond)
 		fmt.Print("\033[H\033[2J")
@@ -307,16 +309,16 @@ func TestBFSMiddleSolver(t *testing.T) {
 
 func TestBFSNewGameSolver(t *testing.T) {
 	game := CreateNewGame()
-	CheckLegal(&game)
-	PrintGame(&game)
+	utils.CheckLegal(&game)
+	utils.PrintGame(&game)
 	action := BestFirstSolver(&game)
 	fmt.Println(SolverCount, len(Mark))
 	for i, a := range action {
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		PrintGame(&game)
+		utils.PrintGame(&game)
 
-		// time.Sleep(250 * time.Millisecond)
-		// fmt.Print("\033[H\033[2J")
+		time.Sleep(250 * time.Millisecond)
+		fmt.Print("\033[H\033[2J")
 	}
 }

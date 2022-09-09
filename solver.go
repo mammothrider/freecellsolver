@@ -1,12 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"freecellsolver/minheap"
+	"freecellsolver/models"
+	"freecellsolver/utils"
+	"time"
+)
 
-func FindHomeAction(game *GameStruct) (result []Action) {
+func FindHomeAction(game *models.GameStruct) (result []models.Action) {
 	// search free
 	for i, c := range game.Free {
-		if c > 0 && CanPlaceHome(game, c) {
-			a := Action{
+		if c > 0 && utils.CanPlaceHome(game, c) {
+			a := models.Action{
 				FCol:   i,
 				FRow:   0,
 				Action: "FreeHome",
@@ -24,8 +30,8 @@ func FindHomeAction(game *GameStruct) (result []Action) {
 		}
 		card := g[leng-1]
 		// move to home
-		if CanPlaceHome(game, card) {
-			a := Action{
+		if utils.CanPlaceHome(game, card) {
+			a := models.Action{
 				FCol:   i,
 				FRow:   leng - 1,
 				Action: "Home",
@@ -38,7 +44,7 @@ func FindHomeAction(game *GameStruct) (result []Action) {
 }
 
 // 移动到Free区
-func FindFreeAction(game *GameStruct) (result []Action) {
+func FindFreeAction(game *models.GameStruct) (result []models.Action) {
 	free := game.Free
 	for i, v := range free {
 		if v != 0 {
@@ -52,11 +58,11 @@ func FindFreeAction(game *GameStruct) (result []Action) {
 			}
 
 			// 序列长度大于空白，禁止移动到Free区
-			if GetSequnceLength(game, j) > 4-i {
+			if utils.GetSequnceLength(game, j) > 4-i {
 				continue
 			}
 
-			result = append(result, Action{
+			result = append(result, models.Action{
 				FCol:   j,
 				FRow:   leng - 1,
 				Action: "Free",
@@ -70,7 +76,7 @@ func FindFreeAction(game *GameStruct) (result []Action) {
 }
 
 // 检查能不能移动到其他组
-func FindMoveTarget(game *GameStruct, card int, size int) (result []int) {
+func FindMoveTarget(game *models.GameStruct, card int, size int) (result []int) {
 	if card == 0 || size == 0 {
 		return
 	}
@@ -85,7 +91,7 @@ func FindMoveTarget(game *GameStruct, card int, size int) (result []int) {
 		}
 
 		tarCard := targetGroup[len(targetGroup)-1]
-		if CanPlaceOn(card, tarCard) && CanMove(game, size) {
+		if utils.CanPlaceOn(card, tarCard) && utils.CanMove(game, size) {
 			result = append(result, targetIndex)
 		}
 	}
@@ -93,11 +99,11 @@ func FindMoveTarget(game *GameStruct, card int, size int) (result []int) {
 }
 
 // 生成移动
-func FindMoveAction(game *GameStruct) (result []Action) {
+func FindMoveAction(game *models.GameStruct) (result []models.Action) {
 	for index, card := range game.Free {
 		movTar := FindMoveTarget(game, card, 1)
 		for _, mov := range movTar {
-			result = append(result, Action{
+			result = append(result, models.Action{
 				FCol:   index,
 				FRow:   0,
 				Action: "FreeMove",
@@ -117,14 +123,14 @@ func FindMoveAction(game *GameStruct) (result []Action) {
 			curCard := curGroup[cardIndex]
 
 			// 检查是不是在序列里
-			if lastCard != 0 && !CanPlaceOn(lastCard, curCard) {
+			if lastCard != 0 && !utils.CanPlaceOn(lastCard, curCard) {
 				break
 			}
 			lastCard = curCard
 
 			movTar := FindMoveTarget(game, curCard, groupLength-cardIndex)
 			for _, mov := range movTar {
-				result = append(result, Action{
+				result = append(result, models.Action{
 					FCol:   groupIndex,
 					FRow:   cardIndex,
 					Action: "Move",
@@ -138,7 +144,7 @@ func FindMoveAction(game *GameStruct) (result []Action) {
 }
 
 // 执行动作，返回一个新object
-func DoAction(game *GameStruct, action *Action) (result GameStruct) {
+func DoAction(game *models.GameStruct, action *models.Action) (result models.GameStruct) {
 	result = *game
 	if action.Action == "Free" {
 		leng := len(result.Card[action.FCol])
@@ -153,7 +159,7 @@ func DoAction(game *GameStruct, action *Action) (result GameStruct) {
 	} else if action.Action == "Move" {
 		cards := result.Card[action.FCol][action.FRow:]
 		result.Card[action.FCol] = result.Card[action.FCol][:action.FRow]
-		result.Card[action.TCol] = CombineSlices(result.Card[action.TCol], cards)
+		result.Card[action.TCol] = utils.CombineSlices(result.Card[action.TCol], cards)
 	} else if action.Action == "FreeHome" {
 		card := result.Free[action.FCol]
 		result.Free[action.FCol] = 0
@@ -161,7 +167,7 @@ func DoAction(game *GameStruct, action *Action) (result GameStruct) {
 	} else if action.Action == "FreeMove" {
 		card := result.Free[action.FCol]
 		result.Free[action.FCol] = 0
-		result.Card[action.TCol] = CombineSlices(result.Card[action.TCol], []int{card})
+		result.Card[action.TCol] = utils.CombineSlices(result.Card[action.TCol], []int{card})
 	}
 
 	return
@@ -171,7 +177,7 @@ func DoAction(game *GameStruct, action *Action) (result GameStruct) {
 var Mark map[string]int = make(map[string]int)
 var SolverCount int = 0
 
-func DFSSolver(game *GameStruct) []Action {
+func DFSSolver(game *models.GameStruct) []models.Action {
 	/*
 		深搜
 		1、按Home，Move，Free行动进行搜索
@@ -181,7 +187,7 @@ func DFSSolver(game *GameStruct) []Action {
 		返回倒序
 	*/
 	// 不重复查找
-	sign := HashGame(game)
+	sign := utils.HashGame(game)
 	if _, ok := Mark[sign]; ok {
 		return nil
 	}
@@ -192,13 +198,13 @@ func DFSSolver(game *GameStruct) []Action {
 		return nil
 	}
 
-	TrySolve := func(act []Action) []Action {
+	TrySolve := func(act []models.Action) []models.Action {
 		for _, a := range act {
 			tmpGame := DoAction(game, &a)
 
 			// last step
-			if IsGameFinished(&tmpGame) {
-				return []Action{a}
+			if utils.IsGameFinished(&tmpGame) {
+				return []models.Action{a}
 			}
 
 			// search deeper
@@ -210,7 +216,7 @@ func DFSSolver(game *GameStruct) []Action {
 		return nil
 	}
 
-	var act []Action
+	var act []models.Action
 	if act = TrySolve(FindHomeAction(game)); act != nil {
 		return act
 	}
@@ -225,7 +231,7 @@ func DFSSolver(game *GameStruct) []Action {
 }
 
 // 算分。Home一张10分，Free一张扣1分
-func BestFirstScore(game *GameStruct) int {
+func BestFirstScore(game *models.GameStruct) int {
 	score := 0
 	for _, c := range game.Home {
 		score += c % 100
@@ -239,47 +245,44 @@ func BestFirstScore(game *GameStruct) int {
 	return score
 }
 
-func BestFirstSolver(game *GameStruct) []Action {
+func BestFirstSolver(game *models.GameStruct) []models.Action {
 	/*
 		维护行动堆
 		优先挑选home张多，free张少的进行
 	*/
-	heap := MinHeap{}
-	heap.Add(Node{
+	heap := minheap.MinHeap{}
+	heap.Add(minheap.Node{
 		Game:  game,
 		Score: 0,
 	})
 	var cache map[string]int = make(map[string]int)
 	var calculation int = 0
 
-	var result *Node
-	for !heap.IsEmpty() {
+	var result *minheap.Node
+	for !heap.IsEmpty() && calculation < 100000 {
 		node := heap.Pop()
-		hash := HashGame(node.Game)
-
+		hash := utils.HashGame(node.Game)
 		// 该场面计算过，且优于目前场景
 		if _, ok := cache[hash]; ok {
 			continue
 		}
-		// fmt.Println(hash, node.Action)
-		// PrintGame(node.Game)
 		cache[hash] = node.Move
 
 		calculation += 1
 		step := node.Move + 1
-		var act []Action
+		var act []models.Action
 		act = append(act, FindHomeAction(node.Game)...)
 		act = append(act, FindMoveAction(node.Game)...)
 		act = append(act, FindFreeAction(node.Game)...)
 		for _, a := range act {
 			tmp := DoAction(node.Game, &a)
-			n := Node{
+			n := minheap.Node{
 				Game:   &tmp,
-				Action: CombineActionSlices(node.Action, []Action{a}),
+				Action: utils.CombineActionSlices(node.Action, []models.Action{a}),
 				Score:  -(BestFirstScore(&tmp)*10000 - step),
 				Move:   step,
 			}
-			if IsGameFinished(&tmp) {
+			if utils.IsGameFinished(&tmp) {
 				result = &n
 				goto END
 			}
@@ -298,6 +301,27 @@ END:
 }
 
 func main() {
+	var game models.GameStruct = models.GameStruct{
+		Card: [8][]int{
+			{312, 111, 107, 407, 311, 207, 408},
+			{304, 211, 302, 309, 208, 106, 406},
+			{203, 110, 308, 402, 210, 305, 404},
+			{102, 301, 307, 411, 313, 105, 413},
+			{101, 103, 306, 205, 104, 202},
+			{204, 310, 109, 403, 112, 405},
+			{409, 212, 108, 201, 206, 213},
+			{113, 401, 412, 303, 209, 410},
+		},
+	}
+	utils.CheckLegal(&game)
+	utils.PrintGame(&game)
+	action := BestFirstSolver(&game)
+	for i, a := range action {
+		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
+		game = DoAction(&game, &a)
+		utils.PrintGame(&game)
 
-	fmt.Println("game")
+		time.Sleep(250 * time.Millisecond)
+		fmt.Print("\033[H\033[2J")
+	}
 }
