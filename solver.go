@@ -171,7 +171,7 @@ func DoAction(game *GameStruct, action *Action) (result GameStruct) {
 var Mark map[string]int = make(map[string]int)
 var SolverCount int = 0
 
-func Solver(game *GameStruct) []Action {
+func DFSSolver(game *GameStruct) []Action {
 	/*
 		深搜
 		1、按Home，Move，Free行动进行搜索
@@ -202,7 +202,7 @@ func Solver(game *GameStruct) []Action {
 			}
 
 			// search deeper
-			tmpResult := Solver(&tmpGame)
+			tmpResult := DFSSolver(&tmpGame)
 			if len(tmpResult) > 0 {
 				return append(tmpResult, a)
 			}
@@ -219,6 +219,79 @@ func Solver(game *GameStruct) []Action {
 	}
 	if act = TrySolve(FindFreeAction(game)); act != nil {
 		return act
+	}
+
+	return nil
+}
+
+// 算分。Home一张10分，Free一张扣1分
+func BestFirstScore(game *GameStruct) int {
+	score := 0
+	for _, c := range game.Home {
+		score += c % 100
+	}
+	score = score * 10
+	for _, c := range game.Free {
+		if c != 0 {
+			score--
+		}
+	}
+	return score
+}
+
+func BestFirstSolver(game *GameStruct) []Action {
+	/*
+		维护行动堆
+		优先挑选home张多，free张少的进行
+	*/
+	heap := MinHeap{}
+	heap.Add(Node{
+		Game:  game,
+		Score: 0,
+	})
+	var cache map[string]int = make(map[string]int)
+	var calculation int = 0
+
+	var result *Node
+	for !heap.IsEmpty() {
+		node := heap.Pop()
+		hash := HashGame(node.Game)
+
+		// 该场面计算过，且优于目前场景
+		if _, ok := cache[hash]; ok {
+			continue
+		}
+		// fmt.Println(hash, node.Action)
+		// PrintGame(node.Game)
+		cache[hash] = node.Move
+
+		calculation += 1
+		step := node.Move + 1
+		var act []Action
+		act = append(act, FindHomeAction(node.Game)...)
+		act = append(act, FindMoveAction(node.Game)...)
+		act = append(act, FindFreeAction(node.Game)...)
+		for _, a := range act {
+			tmp := DoAction(node.Game, &a)
+			n := Node{
+				Game:   &tmp,
+				Action: CombineActionSlices(node.Action, []Action{a}),
+				Score:  -(BestFirstScore(&tmp)*10000 - step),
+				Move:   step,
+			}
+			if IsGameFinished(&tmp) {
+				result = &n
+				goto END
+			}
+			// fmt.Printf("%8s From %d, %d To %d\n", a.Action, a.FCol, a.FRow, a.TCol)
+			heap.Add(n)
+		}
+	}
+END:
+	fmt.Println("Total Step:", calculation)
+	if result != nil {
+		fmt.Println("Move Step:", result.Move)
+		return result.Action
 	}
 
 	return nil

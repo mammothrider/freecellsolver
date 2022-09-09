@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func CreateNewGame() GameStruct {
@@ -230,7 +231,7 @@ func TestPrintGame(t *testing.T) {
 func TestLateSolver(t *testing.T) {
 	game := CreateLateGame()
 	PrintGame(&game)
-	action := Solver(&game)
+	action := DFSSolver(&game)
 	for i, a := range action {
 		fmt.Printf("\nStep %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
@@ -242,7 +243,7 @@ func TestMiddleSolver(t *testing.T) {
 	game := CreateMiddleGame()
 	CheckLegal(&game)
 	PrintGame(&game)
-	action := Solver(&game)
+	action := DFSSolver(&game)
 	fmt.Println(SolverCount)
 	for i := len(action) - 1; i >= 0; i-- {
 		a := action[i]
@@ -256,16 +257,14 @@ func TestNewGameSolver(t *testing.T) {
 	game := CreateNewGame()
 	CheckLegal(&game)
 	PrintGame(&game)
-	action := Solver(&game)
-	fmt.Println(SolverCount, len(Mark))
+	action := DFSSolver(&game)
+	fmt.Println(SolverCount)
 	for i := len(action) - 1; i >= 0; i-- {
 		a := action[i]
 		count := len(action) - i
-		// fmt.Printf("Step %03d| %8s From %d, %d To %d\n", count, a.Action, a.FCol, a.FRow, a.TCol)
+		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", count, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		if count%100 == 0 {
-			PrintGame(&game)
-		}
+		PrintGame(&game)
 	}
 }
 
@@ -277,4 +276,47 @@ func TestSlice(t *testing.T) {
 	a = a[:4]
 	fmt.Println(a)
 	fmt.Println(b)
+}
+
+func TestBFSLateSolver(t *testing.T) {
+	game := CreateLateGame()
+	PrintGame(&game)
+	action := BestFirstSolver(&game)
+	for i, a := range action {
+		fmt.Printf("\nStep %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
+		game = DoAction(&game, &a)
+		PrintGame(&game)
+	}
+}
+
+func TestBFSMiddleSolver(t *testing.T) {
+	game := CreateMiddleGame()
+	CheckLegal(&game)
+	PrintGame(&game)
+	action := BestFirstSolver(&game)
+	fmt.Println(SolverCount)
+	for i, a := range action {
+		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
+		game = DoAction(&game, &a)
+		PrintGame(&game)
+
+		time.Sleep(250 * time.Millisecond)
+		fmt.Print("\033[H\033[2J")
+	}
+}
+
+func TestBFSNewGameSolver(t *testing.T) {
+	game := CreateNewGame()
+	CheckLegal(&game)
+	PrintGame(&game)
+	action := BestFirstSolver(&game)
+	fmt.Println(SolverCount, len(Mark))
+	for i, a := range action {
+		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
+		game = DoAction(&game, &a)
+		PrintGame(&game)
+
+		// time.Sleep(250 * time.Millisecond)
+		// fmt.Print("\033[H\033[2J")
+	}
 }

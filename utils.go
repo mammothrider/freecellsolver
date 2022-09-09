@@ -196,3 +196,15 @@ func CombineSlices(slices ...[]int) []int {
 	}
 	return a
 }
+
+func CombineActionSlices(slices ...[]Action) []Action {
+	count := 0
+	for _, s := range slices {
+		count += len(s)
+	}
+	a := make([]Action, 0, count)
+	for _, s := range slices {
+		a = append(a, s...)
+	}
+	return a
+}
