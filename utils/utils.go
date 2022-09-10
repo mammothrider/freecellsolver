@@ -36,7 +36,7 @@ func CanPlaceHome(game *models.GameStruct, card int) bool {
 }
 
 // 检查是否有足够的空间移动牌
-func CanMove(game *models.GameStruct, count int) bool {
+func CanMove(game *models.GameStruct, target, count int) bool {
 	free := 0
 	empty := 0
 	for _, c := range game.Free {
@@ -44,8 +44,8 @@ func CanMove(game *models.GameStruct, count int) bool {
 			free++
 		}
 	}
-	for _, g := range game.Card {
-		if len(g) == 0 {
+	for i, g := range game.Card {
+		if i != target && len(g) == 0 {
 			empty++
 		}
 	}

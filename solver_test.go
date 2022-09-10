@@ -150,6 +150,24 @@ func TestFindMoveAction(t *testing.T) {
 	for _, r := range result {
 		fmt.Println(game.Card[r.FCol][r.FRow], r.Action, r.TCol)
 	}
+	fmt.Println("+++++++++++++++++++++++++++")
+
+	game = models.GameStruct{
+		Card: [8][]int{
+			{},
+			{213, 312},
+			{203, 110, 308, 407, 106, 405, 304},
+			{102, 301, 307, 411, 313, 105, 413, 112, 211, 310, 209, 108, 207, 306, 205, 104, 403, 302},
+			{406, 305, 404, 303, 202},
+			{204, 103, 402},
+			{409, 212, 111, 210, 109, 408, 107, 206},
+			{113, 412, 311, 410, 309, 208},
+		},
+	}
+	result = FindMoveAction(&game)
+	for _, r := range result {
+		fmt.Println(game.Card[r.FCol][r.FRow], r.Action, r.TCol)
+	}
 }
 
 func TestGetSeq(t *testing.T) {
@@ -316,9 +334,9 @@ func TestBFSNewGameSolver(t *testing.T) {
 	for i, a := range action {
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		utils.PrintGame(&game)
 
-		time.Sleep(250 * time.Millisecond)
-		fmt.Print("\033[H\033[2J")
+		// utils.PrintGame(&game)
+		// time.Sleep(250 * time.Millisecond)
+		// fmt.Print("\033[H\033[2J")
 	}
 }

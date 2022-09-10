@@ -5,8 +5,30 @@ import (
 	"freecellsolver/minheap"
 	"freecellsolver/models"
 	"freecellsolver/utils"
-	"time"
 )
+
+// 移动多张到Home
+func FindUpAction(game *models.GameStruct) []models.Action {
+	action := FindHomeAction(game)
+	var tar *models.Action
+	min := 99
+	for _, h := range game.Home {
+		if h%100 < min {
+			min = h % 100
+		}
+	}
+	for _, act := range action {
+		if game.Home[act.TCol]%100 == min {
+			tar = &act
+		}
+	}
+	if tar != nil {
+		tar.Action = "Up"
+		return []models.Action{*tar}
+	}
+
+	return nil
+}
 
 func FindHomeAction(game *models.GameStruct) (result []models.Action) {
 	// search free
@@ -83,7 +105,8 @@ func FindMoveTarget(game *models.GameStruct, card int, size int) (result []int) 
 	toEmpty := true
 	for targetIndex, targetGroup := range game.Card {
 		if len(targetGroup) == 0 {
-			if toEmpty {
+			// 只检查一个空位的移动即可
+			if toEmpty && utils.CanMove(game, targetIndex, size) {
 				toEmpty = false
 				result = append(result, targetIndex)
 			}
@@ -91,7 +114,7 @@ func FindMoveTarget(game *models.GameStruct, card int, size int) (result []int) 
 		}
 
 		tarCard := targetGroup[len(targetGroup)-1]
-		if utils.CanPlaceOn(card, tarCard) && utils.CanMove(game, size) {
+		if utils.CanPlaceOn(card, tarCard) && utils.CanMove(game, targetIndex, size) {
 			result = append(result, targetIndex)
 		}
 	}
@@ -143,6 +166,30 @@ func FindMoveAction(game *models.GameStruct) (result []models.Action) {
 	return
 }
 
+func DoUpAction(game *models.GameStruct) models.GameStruct {
+	copyGame := *game
+	action := FindHomeAction(&copyGame)
+	do := true
+	for action != nil && do {
+		min := 99
+		for _, h := range copyGame.Home {
+			if h%100 < min {
+				min = h % 100
+			}
+		}
+		do = false
+		for _, act := range action {
+			if copyGame.Home[act.TCol]%100 == min {
+				copyGame = DoAction(&copyGame, &act)
+				do = true
+			}
+		}
+
+		action = FindHomeAction(&copyGame)
+	}
+	return copyGame
+}
+
 // 执行动作，返回一个新object
 func DoAction(game *models.GameStruct, action *models.Action) (result models.GameStruct) {
 	result = *game
@@ -168,6 +215,8 @@ func DoAction(game *models.GameStruct, action *models.Action) (result models.Gam
 		card := result.Free[action.FCol]
 		result.Free[action.FCol] = 0
 		result.Card[action.TCol] = utils.CombineSlices(result.Card[action.TCol], []int{card})
+	} else if action.Action == "Up" {
+		result = DoUpAction(&result)
 	}
 
 	return
@@ -217,7 +266,10 @@ func DFSSolver(game *models.GameStruct) []models.Action {
 	}
 
 	var act []models.Action
-	if act = TrySolve(FindHomeAction(game)); act != nil {
+	// if act = TrySolve(FindHomeAction(game)); act != nil {
+	// 	return act
+	// }
+	if act = TrySolve(FindUpAction(game)); act != nil {
 		return act
 	}
 	if act = TrySolve(FindMoveAction(game)); act != nil {
@@ -271,7 +323,8 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 		calculation += 1
 		step := node.Move + 1
 		var act []models.Action
-		act = append(act, FindHomeAction(node.Game)...)
+		// act = append(act, FindHomeAction(node.Game)...)
+		act = append(act, FindUpAction(node.Game)...)
 		act = append(act, FindMoveAction(node.Game)...)
 		act = append(act, FindFreeAction(node.Game)...)
 		for _, a := range act {
@@ -303,25 +356,26 @@ END:
 func main() {
 	var game models.GameStruct = models.GameStruct{
 		Card: [8][]int{
-			{312, 111, 107, 407, 311, 207, 408},
-			{304, 211, 302, 309, 208, 106, 406},
-			{203, 110, 308, 402, 210, 305, 404},
-			{102, 301, 307, 411, 313, 105, 413},
-			{101, 103, 306, 205, 104, 202},
-			{204, 310, 109, 403, 112, 405},
-			{409, 212, 108, 201, 206, 213},
-			{113, 401, 412, 303, 209, 410},
+			{411, 310, 108, 311, 203, 407, 403},
+			{313, 106, 105, 408, 104, 410, 201},
+			{306, 202, 204, 113, 401, 205, 307},
+			{101, 405, 413, 102, 312, 309, 303},
+			{302, 209, 208, 213, 409, 111},
+			{304, 404, 206, 109, 412, 406},
+			{301, 112, 402, 212, 210, 305},
+			{211, 308, 107, 110, 207, 103},
 		},
 	}
+	fmt.Print("\033[H\033[2J")
 	utils.CheckLegal(&game)
 	utils.PrintGame(&game)
 	action := BestFirstSolver(&game)
 	for i, a := range action {
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		utils.PrintGame(&game)
+		// utils.PrintGame(&game)
 
-		time.Sleep(250 * time.Millisecond)
-		fmt.Print("\033[H\033[2J")
+		// time.Sleep(250 * time.Millisecond)
+		// fmt.Print("\033[H\033[2J")
 	}
 }
