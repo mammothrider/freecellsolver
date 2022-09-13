@@ -5,6 +5,7 @@ import (
 	"freecellsolver/minheap"
 	"freecellsolver/models"
 	"freecellsolver/utils"
+	"time"
 )
 
 // 移动多张到Home
@@ -366,16 +367,16 @@ func main() {
 			{211, 308, 107, 110, 207, 103},
 		},
 	}
-	fmt.Print("\033[H\033[2J")
+
 	utils.CheckLegal(&game)
 	utils.PrintGame(&game)
 	action := BestFirstSolver(&game)
 	for i, a := range action {
+		fmt.Print("\033[H\033[2J")
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
-		// utils.PrintGame(&game)
+		utils.PrintGame(&game)
 
-		// time.Sleep(250 * time.Millisecond)
-		// fmt.Print("\033[H\033[2J")
+		time.Sleep(250 * time.Millisecond)
 	}
 }
