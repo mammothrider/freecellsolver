@@ -1,11 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"freecellsolver/minheap"
 	"freecellsolver/models"
 	"freecellsolver/utils"
-	"time"
+	"os"
 )
 
 // 移动多张到Home
@@ -345,38 +346,27 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 		}
 	}
 END:
-	fmt.Println("Total Step:", calculation)
+	// fmt.Println("Total Step:", calculation)
 	if result != nil {
-		fmt.Println("Move Step:", result.Move)
+		// fmt.Println("Move Step:", result.Move)
 		return result.Action
 	}
 
 	return nil
 }
 
+func SolveJson(input string) string {
+	game := models.GameStruct{}
+	err := json.Unmarshal([]byte(input), &game)
+	if err != nil {
+		panic(err.Error())
+	}
+	actions := BestFirstSolver(&game)
+	res, _ := json.Marshal(actions)
+	return string(res)
+}
+
 func main() {
-	var game models.GameStruct = models.GameStruct{
-		Card: [8][]int{
-			{411, 310, 108, 311, 203, 407, 403},
-			{313, 106, 105, 408, 104, 410, 201},
-			{306, 202, 204, 113, 401, 205, 307},
-			{101, 405, 413, 102, 312, 309, 303},
-			{302, 209, 208, 213, 409, 111},
-			{304, 404, 206, 109, 412, 406},
-			{301, 112, 402, 212, 210, 305},
-			{211, 308, 107, 110, 207, 103},
-		},
-	}
-
-	utils.CheckLegal(&game)
-	utils.PrintGame(&game)
-	action := BestFirstSolver(&game)
-	for i, a := range action {
-		fmt.Print("\033[H\033[2J")
-		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
-		game = DoAction(&game, &a)
-		utils.PrintGame(&game)
-
-		time.Sleep(250 * time.Millisecond)
-	}
+	input := os.Args[1]
+	fmt.Println(SolveJson(input))
 }
