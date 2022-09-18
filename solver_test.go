@@ -24,6 +24,38 @@ func CreateNewGame() models.GameStruct {
 	return game
 }
 
+func CreateNewGame2() models.GameStruct {
+	var game models.GameStruct = models.GameStruct{
+		Card: [8][]int{
+			{103, 405, 104, 304, 411, 413, 113},
+			{403, 402, 110, 107, 412, 213, 202},
+			{109, 205, 306, 310, 408, 311, 101},
+			{204, 108, 201, 111, 208, 410, 106},
+			{211, 206, 308, 203, 409, 401},
+			{112, 309, 407, 307, 302, 105},
+			{404, 212, 102, 313, 301, 305},
+			{207, 406, 303, 209, 312, 210},
+		},
+	}
+	return game
+}
+
+func CreateNewGame3() models.GameStruct {
+	var game models.GameStruct = models.GameStruct{
+		Card: [8][]int{
+			{307, 213, 105, 401, 310, 112, 109},
+			{411, 304, 308, 412, 406, 206, 207},
+			{413, 301, 204, 103, 113, 306, 409},
+			{402, 212, 211, 210, 309, 104, 203},
+			{302, 101, 303, 201, 410, 404},
+			{405, 110, 205, 313, 106, 111},
+			{202, 108, 107, 209, 311, 208},
+			{312, 403, 305, 102, 407, 408},
+		},
+	}
+	return game
+}
+
 func CreateMiddleGame() models.GameStruct {
 	var game models.GameStruct = models.GameStruct{
 		Free: [4]int{413, 308, 209, 0},
@@ -326,11 +358,10 @@ func TestBFSMiddleSolver(t *testing.T) {
 }
 
 func TestBFSNewGameSolver(t *testing.T) {
-	game := CreateNewGame()
+	game := CreateNewGame3()
 	utils.CheckLegal(&game)
 	utils.PrintGame(&game)
 	action := BestFirstSolver(&game)
-	fmt.Println(SolverCount, len(Mark))
 	for i, a := range action {
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
 		game = DoAction(&game, &a)
@@ -339,4 +370,5 @@ func TestBFSNewGameSolver(t *testing.T) {
 		// time.Sleep(250 * time.Millisecond)
 		// fmt.Print("\033[H\033[2J")
 	}
+
 }

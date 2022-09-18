@@ -133,6 +133,7 @@ func FindMoveAction(game *models.GameStruct) (result []models.Action) {
 				FRow:   0,
 				Action: "FreeMove",
 				TCol:   mov,
+				TRow:   len(game.Card[mov]),
 			})
 		}
 	}
@@ -160,6 +161,7 @@ func FindMoveAction(game *models.GameStruct) (result []models.Action) {
 					FRow:   cardIndex,
 					Action: "Move",
 					TCol:   mov,
+					TRow:   len(game.Card[mov]),
 				})
 			}
 		}
@@ -172,6 +174,7 @@ func DoUpAction(game *models.GameStruct) models.GameStruct {
 	copyGame := *game
 	action := FindHomeAction(&copyGame)
 	do := true
+	// TODO: 2的特殊处理
 	for action != nil && do {
 		min := 99
 		for _, h := range copyGame.Home {
@@ -313,7 +316,7 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 	var calculation int = 0
 
 	var result *minheap.Node
-	for !heap.IsEmpty() && calculation < 100000 {
+	for !heap.IsEmpty() && calculation < 1000000 {
 		node := heap.Pop()
 		hash := utils.HashGame(node.Game)
 		// 该场面计算过，且优于目前场景
