@@ -13,4 +13,5 @@ type Action struct {
 	FRow   int
 	Action string
 	TCol   int
+	TRow   int
 }
