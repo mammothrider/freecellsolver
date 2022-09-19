@@ -209,3 +209,11 @@ func CombineActionSlices(slices ...[]models.Action) []models.Action {
 	}
 	return a
 }
+
+// 15% faster than above method
+func CopyAppend(slice []models.Action, act models.Action) []models.Action {
+	result := make([]models.Action, len(slice), len(slice)+1)
+	copy(result, slice)
+	result = append(result, act)
+	return result
+}

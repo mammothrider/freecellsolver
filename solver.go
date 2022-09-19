@@ -174,7 +174,6 @@ func DoUpAction(game *models.GameStruct) models.GameStruct {
 	copyGame := *game
 	action := FindHomeAction(&copyGame)
 	do := true
-	// TODO: 2的特殊处理
 	for action != nil && do {
 		min := 99
 		for _, h := range copyGame.Home {
@@ -182,9 +181,13 @@ func DoUpAction(game *models.GameStruct) models.GameStruct {
 				min = h % 100
 			}
 		}
+		// 2的特殊处理
+		if min == 0 {
+			min = 1
+		}
 		do = false
 		for _, act := range action {
-			if copyGame.Home[act.TCol]%100 == min {
+			if copyGame.Home[act.TCol]%100 <= min {
 				copyGame = DoAction(&copyGame, &act)
 				do = true
 			}
@@ -332,11 +335,12 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 		act = append(act, FindUpAction(node.Game)...)
 		act = append(act, FindMoveAction(node.Game)...)
 		act = append(act, FindFreeAction(node.Game)...)
+
 		for _, a := range act {
 			tmp := DoAction(node.Game, &a)
 			n := minheap.Node{
 				Game:   &tmp,
-				Action: utils.CombineActionSlices(node.Action, []models.Action{a}),
+				Action: utils.CopyAppend(node.Action, a),
 				Score:  -(BestFirstScore(&tmp)*10000 - step),
 				Move:   step,
 			}
@@ -349,7 +353,7 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 		}
 	}
 END:
-	// fmt.Println("Total Step:", calculation)
+	fmt.Println("Total Step:", calculation)
 	if result != nil {
 		// fmt.Println("Move Step:", result.Move)
 		return result.Action
