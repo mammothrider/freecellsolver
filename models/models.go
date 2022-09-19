@@ -15,3 +15,11 @@ type Action struct {
 	TCol   int
 	TRow   int
 }
+
+type Node struct {
+	Game   *GameStruct // 当前场面
+	Action Action      // 从上一步到这一步的行动
+	Score  int         // 目前分数
+	Move   int         // 行动数
+	Parent *Node       // 父结点
+}

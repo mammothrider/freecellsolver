@@ -2,15 +2,8 @@ package minheap
 
 import "freecellsolver/models"
 
-type Node struct {
-	Game   *models.GameStruct // 当前场面
-	Action []models.Action    // 之前的行动
-	Score  int                // 目前分数
-	Move   int                // 行动数
-}
-
 type MinHeap struct {
-	node []Node
+	node []models.Node
 }
 
 func (m *MinHeap) Sort() {
@@ -22,7 +15,7 @@ func (m *MinHeap) Sort() {
 	}
 }
 
-func (m *MinHeap) Add(n Node) {
+func (m *MinHeap) Add(n models.Node) {
 	m.node = append(m.node, n)
 	for i := len(m.node) - 1; i > 0; i = i / 2 {
 		root := i / 2
@@ -32,7 +25,7 @@ func (m *MinHeap) Add(n Node) {
 	}
 }
 
-func (m *MinHeap) Pop() *Node {
+func (m *MinHeap) Pop() *models.Node {
 	if m.node == nil {
 		return nil
 	}

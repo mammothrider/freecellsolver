@@ -311,14 +311,14 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 		优先挑选home张多，free张少的进行
 	*/
 	heap := minheap.MinHeap{}
-	heap.Add(minheap.Node{
+	heap.Add(models.Node{
 		Game:  game,
 		Score: 0,
 	})
 	var cache map[string]int = make(map[string]int)
 	var calculation int = 0
 
-	var result *minheap.Node
+	var result *models.Node
 	for !heap.IsEmpty() && calculation < 1000000 {
 		node := heap.Pop()
 		hash := utils.HashGame(node.Game)
@@ -338,11 +338,12 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 
 		for _, a := range act {
 			tmp := DoAction(node.Game, &a)
-			n := minheap.Node{
+			n := models.Node{
 				Game:   &tmp,
-				Action: utils.CopyAppend(node.Action, a),
+				Action: a,
 				Score:  -(BestFirstScore(&tmp)*10000 - step),
 				Move:   step,
+				Parent: node,
 			}
 			if utils.IsGameFinished(&tmp) {
 				result = &n
@@ -354,12 +355,17 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 	}
 END:
 	fmt.Println("Total Step:", calculation)
-	if result != nil {
-		// fmt.Println("Move Step:", result.Move)
-		return result.Action
+	actions := make([]models.Action, 0, 70)
+	for result != nil && result.Parent != nil {
+		actions = append(actions, result.Action)
+		result = result.Parent
+	}
+	// reverse
+	for i, j := 0, len(actions)-1; i < j; i, j = i+1, j-1 {
+		actions[i], actions[j] = actions[j], actions[i]
 	}
 
-	return nil
+	return actions
 }
 
 func SolveJson(input string) string {
