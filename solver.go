@@ -7,6 +7,9 @@ import (
 	"freecellsolver/models"
 	"freecellsolver/utils"
 	"os"
+	"runtime"
+	"sync"
+	"time"
 )
 
 // 移动多张到Home
@@ -311,7 +314,7 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 		优先挑选home张多，free张少的进行
 	*/
 	heap := minheap.MinHeap{}
-	heap.Add(models.Node{
+	heap.Add(&models.Node{
 		Game:  game,
 		Score: 0,
 	})
@@ -350,7 +353,7 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 				goto END
 			}
 			// fmt.Printf("%8s From %d, %d To %d\n", a.Action, a.FCol, a.FRow, a.TCol)
-			heap.Add(n)
+			heap.Add(&n)
 		}
 	}
 END:
@@ -366,6 +369,81 @@ END:
 	}
 
 	return actions
+}
+
+func ThreadSolve(waitChan chan *models.Node, threadCount int32) {
+	node := <-waitChan
+	step := node.Move + 1
+	var act []models.Action
+	// act = append(act, FindHomeAction(node.Game)...)
+	act = append(act, FindUpAction(node.Game)...)
+	act = append(act, FindMoveAction(node.Game)...)
+	act = append(act, FindFreeAction(node.Game)...)
+
+	for _, a := range act {
+		tmp := DoAction(node.Game, &a)
+		n := models.Node{
+			Game:   &tmp,
+			Action: a,
+			Score:  -(BestFirstScore(&tmp)*10000 - step),
+			Move:   step,
+			Parent: node,
+		}
+		if utils.IsGameFinished(&tmp) {
+			result = &n
+			goto END
+		}
+		// fmt.Printf("%8s From %d, %d To %d\n", a.Action, a.FCol, a.FRow, a.TCol)
+		heap.Add(&n)
+	}
+}
+
+func MultiThreadBestFirstSolver(game *models.GameStruct) []models.Action {
+	/*
+		inputChan -> heap -> waitChan -> solver -> inputChan
+	*/
+	var (
+		cpuCoreCount int               = runtime.NumCPU()
+		inputChan    chan *models.Node = make(chan *models.Node, cpuCoreCount-1)
+		waitChan     chan *models.Node = make(chan *models.Node, cpuCoreCount-1)
+		resultChan   chan *models.Node = make(chan *models.Node, 1)
+
+		cache        map[string]int = make(map[string]int)
+		calculation  int            = 0
+		threadButton bool           = true
+		threadCount  int32          = 0
+		lock         sync.RWMutex
+	)
+	inputChan <- &models.Node{
+		Game:  game,
+		Score: 0,
+	}
+
+	// 写入到堆里,预处理,并等待分配
+	go func(inputChan <-chan *models.Node, waitChan chan<- *models.Node) {
+		heap := minheap.MinHeap{}
+		for threadButton {
+			tmp_node := heap.Get()
+			select {
+			case node := <-inputChan:
+				heap.Add(node)
+			case waitChan <- tmp_node:
+				heap.Pop()
+			default:
+				time.Sleep(time.Duration(10) * time.Millisecond)
+			}
+		}
+	}(inputChan, waitChan)
+
+	for threadButton && calculation < 1000000 {
+		if int(threadCount) >= cpuCoreCount {
+			time.Sleep(time.Duration(100) * time.Millisecond)
+		}
+
+		go ThreadSolve(waitChan, threadCount)
+	}
+
+	return nil
 }
 
 func SolveJson(input string) string {

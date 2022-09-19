@@ -3,7 +3,7 @@ package minheap
 import "freecellsolver/models"
 
 type MinHeap struct {
-	node []models.Node
+	node []*models.Node
 }
 
 func (m *MinHeap) Sort() {
@@ -15,7 +15,7 @@ func (m *MinHeap) Sort() {
 	}
 }
 
-func (m *MinHeap) Add(n models.Node) {
+func (m *MinHeap) Add(n *models.Node) {
 	m.node = append(m.node, n)
 	for i := len(m.node) - 1; i > 0; i = i / 2 {
 		root := i / 2
@@ -23,6 +23,13 @@ func (m *MinHeap) Add(n models.Node) {
 			m.node[i], m.node[root] = m.node[root], m.node[i]
 		}
 	}
+}
+
+func (m *MinHeap) Get() *models.Node {
+	if m.node == nil {
+		return nil
+	}
+	return m.node[0]
 }
 
 func (m *MinHeap) Pop() *models.Node {
@@ -49,7 +56,7 @@ func (m *MinHeap) Pop() *models.Node {
 		m.node[i], m.node[t] = m.node[t], m.node[i]
 		i = t
 	}
-	return &root
+	return root
 }
 
 func (m *MinHeap) IsEmpty() bool {
