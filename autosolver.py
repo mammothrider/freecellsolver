@@ -33,20 +33,15 @@ class Card:
             self.card[int(number)] = file
 
     def find_card(self, target):
-        result = 0
         tmpMax = 0
-        # target = cv2.cvtColor(target, cv2.COLOR_BGR2GRAY)
-        # target = cv2.threshold(target, 120, 255, cv2.THRESH_BINARY)[1]
         cache = {}
         for k, v in self.card.items():
             tmp = cv2.matchTemplate(target, v, cv2.TM_CCOEFF_NORMED)
             min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(tmp)
-            cache[k] = round(max_val, 3)
-            if max_val > 0.7 and max_val > tmpMax:
+            if max_val > 0.70 and max_val > tmpMax:
                 tmpMax = max_val
-                result = k
-        # print(result, cache)
-        return result
+                cache[k] = max_val
+        return cache
 
 
 class GameStruct:
@@ -131,6 +126,7 @@ class Solver:
         cut_width = 30
         y = [172, 388, 602, 817, 1032, 1246, 1462, 1676]
 
+        cache = {}
         for col in range(8):
             for row in range(8):
                 if col + row * 8 >= 52:
@@ -140,9 +136,41 @@ class Solver:
                 card = target_img[h:h+cut_height, w:w+cut_width]
                 num = self.card.find_card(card)
                 cv2.rectangle(target_img, (w, h), (w + cut_width, h + cut_height), color=(0, 0, 0))
-                if num == 0:
-                    break
-                game.card[col].append(num)
+                cache[(col, row)] = num
+
+        card_loc = {}
+        for i in range(1, 5):
+            for j in range(1, 14):
+                card = i * 100 + j
+                for loc, value in cache.items():
+                    if card in value:
+                        card_loc.setdefault(card, [])
+                        card_loc[card].append((loc[0], loc[1], value[card]))
+
+        def set_card(loc, card):
+            if len(game.card[loc[0]]) <= loc[1]:
+                game.card[loc[0]] += [0] * (loc[1] - len(game.card[loc[0]]) + 1)
+            # 正常逻辑
+            if game.card[loc[0]][loc[1]] == 0:
+                game.card[loc[0]][loc[1]] = card
+                return True
+            return False
+
+        for card, loc_list in card_loc.items():
+            loc_list.sort(key=lambda x: x[2])
+            loc = loc_list.pop()
+            
+            # 尝试设置牌的位置，如果位置上有牌，比较，并将更劣牌放到其次好位置
+            while not set_card(loc, card):
+                cur_card = game.card[loc[0]][loc[1]]
+                value = cache[loc[:2]]
+                if value[cur_card] < value[card]:
+                    game.card[loc[0]][loc[1]] = 0
+                    set_card(loc, card)
+                    loc = card_loc[cur_card].pop()
+                    card = cur_card
+                else:
+                    loc = loc_list.pop()
 
         # free area
         # free_height = 90
@@ -173,7 +201,7 @@ class Solver:
 
     def call_solver(self, game: GameStruct):
         data = json.dumps(game.to_dict())
-        # print(data)
+        print(data)
         result = subprocess.run(["./freecellsolver", data], capture_output=True, text=True)
         if result.stderr:
             print(result.stderr)
@@ -260,6 +288,7 @@ if __name__ == "__main__":
 
     # test capture
     # image = Solver().capture_window()
+    # # image = cv2.imread("img3.png")
     # game = Solver().analyze(image, debug = True)
     # game.check_legal()
 
