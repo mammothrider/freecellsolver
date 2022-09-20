@@ -1,4 +1,4 @@
-package main
+package solver
 
 import (
 	"fmt"
@@ -40,6 +40,7 @@ func CreateNewGame2() models.GameStruct {
 	return game
 }
 
+// 非常复杂
 func CreateNewGame3() models.GameStruct {
 	var game models.GameStruct = models.GameStruct{
 		Card: [8][]int{
@@ -54,6 +55,24 @@ func CreateNewGame3() models.GameStruct {
 		},
 	}
 	return game
+}
+
+// 必须要home操作才能解
+func CreateNewGame4() models.GameStruct {
+	var game models.GameStruct = models.GameStruct{
+		Card: [8][]int{
+			{404, 208, 102, 406, 112, 307, 306},
+			{206, 304, 403, 408, 412, 104, 303},
+			{207, 110, 302, 313, 103, 308, 205},
+			{209, 211, 105, 301, 311, 310, 106},
+			{407, 111, 410, 305, 107, 405},
+			{212, 402, 101, 109, 309, 213},
+			{201, 202, 413, 312, 210, 401},
+			{113, 108, 204, 409, 411, 203},
+		},
+	}
+	return game
+
 }
 
 func CreateMiddleGame() models.GameStruct {
@@ -358,7 +377,7 @@ func TestBFSMiddleSolver(t *testing.T) {
 }
 
 func TestBFSNewGameSolver(t *testing.T) {
-	game := CreateNewGame3()
+	game := CreateNewGame()
 	utils.CheckLegal(&game)
 	utils.PrintGame(&game)
 	action := BestFirstSolver(&game)
