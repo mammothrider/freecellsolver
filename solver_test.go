@@ -306,7 +306,7 @@ func TestMiddleSolver(t *testing.T) {
 }
 
 func TestNewGameSolver(t *testing.T) {
-	game := CreateNewGame()
+	game := CreateNewGame3()
 	utils.CheckLegal(&game)
 	utils.PrintGame(&game)
 	action := DFSSolver(&game)
@@ -371,4 +371,36 @@ func TestBFSNewGameSolver(t *testing.T) {
 		// fmt.Print("\033[H\033[2J")
 	}
 
+}
+
+func TestMultiThreadMiddleGameSolver(t *testing.T) {
+	game := CreateMiddleGame()
+	utils.CheckLegal(&game)
+	utils.PrintGame(&game)
+	action := MultiThreadBestFirstSolver(&game)
+	fmt.Println(SolverCount)
+	for i, a := range action {
+		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
+		game = DoAction(&game, &a)
+
+		// utils.PrintGame(&game)
+		// fmt.Print("\033[H\033[2J")
+		// time.Sleep(200 * time.Millisecond)
+	}
+}
+
+func TestMultiThreadNewGameSolver(t *testing.T) {
+	game := CreateNewGame3()
+	utils.CheckLegal(&game)
+	utils.PrintGame(&game)
+	action := MultiThreadBestFirstSolver(&game)
+	fmt.Println(SolverCount)
+	for i, a := range action {
+		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
+		game = DoAction(&game, &a)
+
+		// utils.PrintGame(&game)
+		// fmt.Print("\033[H\033[2J")
+		// time.Sleep(200 * time.Millisecond)
+	}
 }

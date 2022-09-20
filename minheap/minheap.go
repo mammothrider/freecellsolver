@@ -1,6 +1,8 @@
 package minheap
 
-import "freecellsolver/models"
+import (
+	"freecellsolver/models"
+)
 
 type MinHeap struct {
 	node []*models.Node
@@ -26,14 +28,14 @@ func (m *MinHeap) Add(n *models.Node) {
 }
 
 func (m *MinHeap) Get() *models.Node {
-	if m.node == nil {
+	if len(m.node) == 0 {
 		return nil
 	}
 	return m.node[0]
 }
 
 func (m *MinHeap) Pop() *models.Node {
-	if m.node == nil {
+	if len(m.node) == 0 {
 		return nil
 	}
 	root := m.node[0]
