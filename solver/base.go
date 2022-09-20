@@ -5,12 +5,9 @@ import (
 	"freecellsolver/utils"
 )
 
-// 移动多张到Home
-func FindUpAction(game *models.GameStruct) []models.Action {
-	action := FindHomeAction(game)
-	var tar *models.Action
+func getHomeMin(home [4]int) int {
 	min := 99
-	for _, h := range game.Home {
+	for _, h := range home {
 		if h%100 < min {
 			min = h % 100
 		}
@@ -18,8 +15,16 @@ func FindUpAction(game *models.GameStruct) []models.Action {
 	if min == 0 {
 		min = 1
 	}
+	return min
+}
+
+// 移动多张到Home
+func FindUpAction(game *models.GameStruct) []models.Action {
+	action := FindHomeAction(game)
+	var tar *models.Action
+	homeMin := getHomeMin(game.Home)
 	for _, act := range action {
-		if game.Home[act.TCol]%100 <= min {
+		if game.Home[act.TCol]%100 <= homeMin {
 			tar = &act
 		}
 	}
@@ -32,9 +37,10 @@ func FindUpAction(game *models.GameStruct) []models.Action {
 }
 
 func FindHomeAction(game *models.GameStruct) (result []models.Action) {
+	homeMin := getHomeMin(game.Home)
 	// search free
 	for i, c := range game.Free {
-		if c > 0 && utils.CanPlaceHome(game, c) {
+		if c > 0 && c%100 <= homeMin+2 && utils.CanPlaceHome(game, c) {
 			a := models.Action{
 				FCol:   i,
 				FRow:   0,
@@ -53,7 +59,7 @@ func FindHomeAction(game *models.GameStruct) (result []models.Action) {
 		}
 		card := g[leng-1]
 		// move to home
-		if utils.CanPlaceHome(game, card) {
+		if card%100 <= homeMin+2 && utils.CanPlaceHome(game, card) {
 			a := models.Action{
 				FCol:   i,
 				FRow:   leng - 1,
@@ -169,62 +175,51 @@ func FindMoveAction(game *models.GameStruct) (result []models.Action) {
 	return
 }
 
-func DoUpAction(game *models.GameStruct) models.GameStruct {
-	copyGame := *game
-	action := FindHomeAction(&copyGame)
+func DoUpAction(game *models.GameStruct) *models.GameStruct {
+	action := FindHomeAction(game)
 	do := true
 	for action != nil && do {
-		min := 99
-		for _, h := range copyGame.Home {
-			if h%100 < min {
-				min = h % 100
-			}
-		}
-		// 2的特殊处理
-		if min == 0 {
-			min = 1
-		}
+		homeMin := getHomeMin(game.Home)
 		do = false
 		for _, act := range action {
-			if copyGame.Home[act.TCol]%100 <= min {
-				copyGame = DoAction(&copyGame, &act)
+			if game.Home[act.TCol]%100 <= homeMin {
+				game = DoAction(game, &act)
 				do = true
 			}
 		}
 
-		action = FindHomeAction(&copyGame)
+		action = FindHomeAction(game)
 	}
-	return copyGame
+	return game
 }
 
 // 执行动作，返回一个新object
-func DoAction(game *models.GameStruct, action *models.Action) (result models.GameStruct) {
-	result = *game
+func DoAction(game *models.GameStruct, action *models.Action) *models.GameStruct {
 	if action.Action == "Free" {
-		leng := len(result.Card[action.FCol])
-		card := result.Card[action.FCol][leng-1]
-		result.Card[action.FCol] = result.Card[action.FCol][:leng-1]
-		result.Free[action.TCol] = card
+		leng := len(game.Card[action.FCol])
+		card := game.Card[action.FCol][leng-1]
+		game.Card[action.FCol] = game.Card[action.FCol][:leng-1]
+		game.Free[action.TCol] = card
 	} else if action.Action == "Home" {
-		leng := len(result.Card[action.FCol])
-		card := result.Card[action.FCol][leng-1]
-		result.Card[action.FCol] = result.Card[action.FCol][:leng-1]
-		result.Home[action.TCol] = card
+		leng := len(game.Card[action.FCol])
+		card := game.Card[action.FCol][leng-1]
+		game.Card[action.FCol] = game.Card[action.FCol][:leng-1]
+		game.Home[action.TCol] = card
 	} else if action.Action == "Move" {
-		cards := result.Card[action.FCol][action.FRow:]
-		result.Card[action.FCol] = result.Card[action.FCol][:action.FRow]
-		result.Card[action.TCol] = utils.CombineSlices(result.Card[action.TCol], cards)
+		cards := game.Card[action.FCol][action.FRow:]
+		game.Card[action.FCol] = game.Card[action.FCol][:action.FRow]
+		game.Card[action.TCol] = append(game.Card[action.TCol], cards...)
 	} else if action.Action == "FreeHome" {
-		card := result.Free[action.FCol]
-		result.Free[action.FCol] = 0
-		result.Home[action.TCol] = card
+		card := game.Free[action.FCol]
+		game.Free[action.FCol] = 0
+		game.Home[action.TCol] = card
 	} else if action.Action == "FreeMove" {
-		card := result.Free[action.FCol]
-		result.Free[action.FCol] = 0
-		result.Card[action.TCol] = utils.CombineSlices(result.Card[action.TCol], []int{card})
+		card := game.Free[action.FCol]
+		game.Free[action.FCol] = 0
+		game.Card[action.TCol] = append(game.Card[action.TCol], card)
 	} else if action.Action == "Up" {
-		result = DoUpAction(&result)
+		game = DoUpAction(game)
 	}
 
-	return
+	return game
 }

@@ -106,7 +106,7 @@ func CreateLateGame() models.GameStruct {
 func TestIsGameFinished(t *testing.T) {
 	game := CreateLateGame()
 	act := FindHomeAction(&game)
-	game = DoAction(&game, &act[0])
+	DoAction(&game, &act[0])
 	utils.PrintGame(&game)
 	fmt.Println(utils.IsGameFinished(&game))
 }
@@ -234,8 +234,8 @@ func TestDoAction(t *testing.T) {
 	game = CreateNewGame()
 	compareGame = game
 	result := FindMoveAction(&game)
-	rgame := DoAction(&game, &result[0])
-	utils.PrintGame(&rgame)
+	DoAction(&game, &result[0])
+	utils.PrintGame(&game)
 	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("Move Change")
 		utils.PrintGame(&game)
@@ -247,8 +247,8 @@ func TestDoAction(t *testing.T) {
 	game.Card[7] = append(game.Card[7], 101)
 	compareGame = game
 	result = FindHomeAction(&game)
-	rgame = DoAction(&game, &result[0])
-	utils.PrintGame(&rgame)
+	DoAction(&game, &result[0])
+	utils.PrintGame(&game)
 	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("Home Change")
 		utils.PrintGame(&game)
@@ -259,8 +259,8 @@ func TestDoAction(t *testing.T) {
 	game = CreateNewGame()
 	compareGame = game
 	result = FindFreeAction(&game)
-	rgame = DoAction(&game, &result[0])
-	utils.PrintGame(&rgame)
+	DoAction(&game, &result[0])
+	utils.PrintGame(&game)
 	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("Free Change")
 		utils.PrintGame(&game)
@@ -272,8 +272,8 @@ func TestDoAction(t *testing.T) {
 	game.Free[3] = 101
 	compareGame = game
 	result = FindHomeAction(&game)
-	rgame = DoAction(&game, &result[0])
-	utils.PrintGame(&rgame)
+	DoAction(&game, &result[0])
+	utils.PrintGame(&game)
 	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("FreeHome Change")
 		utils.PrintGame(&game)
@@ -285,8 +285,8 @@ func TestDoAction(t *testing.T) {
 	game.Free[3] = 307
 	compareGame = game
 	result = FindMoveAction(&game)
-	rgame = DoAction(&game, &result[0])
-	utils.PrintGame(&rgame)
+	DoAction(&game, &result[0])
+	utils.PrintGame(&game)
 	if !utils.CheckEqual(&game, &compareGame) {
 		t.Error("FreeMove Change")
 		utils.PrintGame(&game)
@@ -305,7 +305,7 @@ func TestLateSolver(t *testing.T) {
 	action := DFSSolver(&game)
 	for i, a := range action {
 		fmt.Printf("\nStep %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
-		game = DoAction(&game, &a)
+		DoAction(&game, &a)
 		utils.PrintGame(&game)
 	}
 }
@@ -319,7 +319,7 @@ func TestMiddleSolver(t *testing.T) {
 	for i := len(action) - 1; i >= 0; i-- {
 		a := action[i]
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
-		game = DoAction(&game, &a)
+		DoAction(&game, &a)
 		// utils.PrintGame(&game)
 	}
 }
@@ -334,7 +334,7 @@ func TestNewGameSolver(t *testing.T) {
 		a := action[i]
 		count := len(action) - i
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", count, a.Action, a.FCol, a.FRow, a.TCol)
-		game = DoAction(&game, &a)
+		DoAction(&game, &a)
 		utils.PrintGame(&game)
 	}
 }
@@ -355,7 +355,7 @@ func TestBFSLateSolver(t *testing.T) {
 	action := BestFirstSolver(&game)
 	for i, a := range action {
 		fmt.Printf("\nStep %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
-		game = DoAction(&game, &a)
+		DoAction(&game, &a)
 		utils.PrintGame(&game)
 	}
 }
@@ -368,7 +368,7 @@ func TestBFSMiddleSolver(t *testing.T) {
 	fmt.Println(SolverCount)
 	for i, a := range action {
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
-		game = DoAction(&game, &a)
+		DoAction(&game, &a)
 		utils.PrintGame(&game)
 
 		time.Sleep(250 * time.Millisecond)
@@ -377,13 +377,13 @@ func TestBFSMiddleSolver(t *testing.T) {
 }
 
 func TestBFSNewGameSolver(t *testing.T) {
-	game := CreateNewGame()
+	game := CreateNewGame2()
 	utils.CheckLegal(&game)
 	utils.PrintGame(&game)
 	action := BestFirstSolver(&game)
 	for i, a := range action {
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
-		game = DoAction(&game, &a)
+		DoAction(&game, &a)
 
 		// utils.PrintGame(&game)
 		// time.Sleep(250 * time.Millisecond)
@@ -400,7 +400,7 @@ func TestMultiThreadMiddleGameSolver(t *testing.T) {
 	fmt.Println(SolverCount)
 	for i, a := range action {
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
-		game = DoAction(&game, &a)
+		DoAction(&game, &a)
 
 		// utils.PrintGame(&game)
 		// fmt.Print("\033[H\033[2J")
@@ -416,7 +416,7 @@ func TestMultiThreadNewGameSolver(t *testing.T) {
 	fmt.Println(SolverCount)
 	for i, a := range action {
 		fmt.Printf("Step %03d| %8s From %d, %d To %d\n", i, a.Action, a.FCol, a.FRow, a.TCol)
-		game = DoAction(&game, &a)
+		DoAction(&game, &a)
 
 		// utils.PrintGame(&game)
 		// fmt.Print("\033[H\033[2J")

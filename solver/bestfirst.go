@@ -36,7 +36,7 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 	var calculation int = 0
 
 	var result *models.Node
-	for !heap.IsEmpty() && calculation < 1000000 {
+	for !heap.IsEmpty() && calculation < 700000 {
 		node := heap.Pop()
 		hash := utils.HashGame(node.Game)
 		// 该场面计算过，且优于历史场景
@@ -55,19 +55,20 @@ func BestFirstSolver(game *models.GameStruct) []models.Action {
 		if len(act) == 0 {
 			act = append(act, FindMoveAction(node.Game)...)
 			act = append(act, FindFreeAction(node.Game)...)
-			// act = append(act, FindHomeAction(node.Game)...)
+			act = append(act, FindHomeAction(node.Game)...)
 		}
 
 		for _, a := range act {
-			tmp := DoAction(node.Game, &a)
+			copyGame := node.Game.Copy()
+			DoAction(copyGame, &a)
 			n := models.Node{
-				Game:   &tmp,
+				Game:   copyGame,
 				Action: a,
-				Score:  -(BestFirstScore(&tmp)*10000 - step),
+				Score:  -(BestFirstScore(copyGame)*10000 - step),
 				Move:   step,
 				Parent: node,
 			}
-			if utils.IsGameFinished(&tmp) {
+			if utils.IsGameFinished(copyGame) {
 				if result == nil || result.Move > n.Move {
 					result = &n
 				}

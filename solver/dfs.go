@@ -32,15 +32,16 @@ func DFSSolver(game *models.GameStruct) []models.Action {
 
 	TrySolve := func(act []models.Action) []models.Action {
 		for _, a := range act {
-			tmpGame := DoAction(game, &a)
+			copyGame := game.Copy()
+			DoAction(copyGame, &a)
 
 			// last step
-			if utils.IsGameFinished(&tmpGame) {
+			if utils.IsGameFinished(copyGame) {
 				return []models.Action{a}
 			}
 
 			// search deeper
-			tmpResult := DFSSolver(&tmpGame)
+			tmpResult := DFSSolver(copyGame)
 			if len(tmpResult) > 0 {
 				return append(tmpResult, a)
 			}

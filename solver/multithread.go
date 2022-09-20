@@ -29,15 +29,16 @@ func ThreadSolve(inputChan, waitChan, resultChan chan *models.Node, cache *sync.
 
 			tmpResult := make([]*models.Node, 0, len(act))
 			for _, a := range act {
-				tmp := DoAction(node.Game, &a)
+				copyGame := node.Game.Copy()
+				DoAction(copyGame, &a)
 				n := models.Node{
-					Game:   &tmp,
+					Game:   copyGame,
 					Action: a,
-					Score:  -(BestFirstScore(&tmp)*10000 - step),
+					Score:  -(BestFirstScore(copyGame)*10000 - step),
 					Move:   step,
 					Parent: node,
 				}
-				if utils.IsGameFinished(&tmp) {
+				if utils.IsGameFinished(copyGame) {
 					resultChan <- &n
 					return
 				}

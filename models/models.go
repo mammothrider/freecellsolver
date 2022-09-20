@@ -23,3 +23,14 @@ type Node struct {
 	Move   int         // 行动数
 	Parent *Node       // 父结点
 }
+
+func (g *GameStruct) Copy() *GameStruct {
+	game := GameStruct{}
+	game.Free = g.Free
+	game.Home = g.Home
+	for i := 0; i < 8; i++ {
+		game.Card[i] = make([]int, len(g.Card[i]))
+		copy(game.Card[i], g.Card[i])
+	}
+	return &game
+}
