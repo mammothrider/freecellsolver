@@ -6,28 +6,32 @@ import (
 	"freecellsolver/minheap"
 	"freecellsolver/models"
 	"freecellsolver/utils"
+	"runtime"
 	"sync"
-	"time"
+	"sync/atomic"
 )
 
-func ThreadSolve(inputChan, waitChan, resultChan chan *models.Node, cache *sync.Map, ctx context.Context, wg *sync.WaitGroup) {
+func ThreadSolve(heap *minheap.SafeMinHeap, resultChan chan *models.Node, cache *sync.Map, ctx context.Context, wg *sync.WaitGroup, calculation *int32) {
 	defer wg.Done()
 	// defer fmt.Println("ThreadSolve quit")
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case node := <-waitChan:
+		default:
+			node := heap.Pop()
 			if node == nil {
 				continue
 			}
+			atomic.AddInt32(calculation, 1)
 			step := node.Move + 1
 			var act []models.Action
 			act = append(act, FindUpAction(node.Game)...)
-			act = append(act, FindMoveAction(node.Game)...)
-			act = append(act, FindFreeAction(node.Game)...)
-
-			tmpResult := make([]*models.Node, 0, len(act))
+			// Up是必须行为
+			if len(act) == 0 {
+				act = append(act, FindMoveAction(node.Game)...)
+				act = append(act, FindFreeAction(node.Game)...)
+			}
 			for _, a := range act {
 				tmp := DoAction(node.Game, &a)
 				n := models.Node{
@@ -47,14 +51,7 @@ func ThreadSolve(inputChan, waitChan, resultChan chan *models.Node, cache *sync.
 					continue
 				}
 				cache.Store(hash, n.Move)
-				tmpResult = append(tmpResult, &n)
-			}
-			for _, n := range tmpResult {
-				select {
-				case <-ctx.Done():
-					return
-				case inputChan <- n:
-				}
+				heap.Add(&n)
 			}
 		}
 	}
@@ -65,73 +62,23 @@ func MultiThreadBestFirstSolver(game *models.GameStruct) []models.Action {
 		inputChan -> heap -> waitChan -> solver -> inputChan
 	*/
 	var (
-		cpuCoreCount int               = 8 //runtime.NumCPU()
-		inputChan    chan *models.Node = make(chan *models.Node, cpuCoreCount-1)
-		waitChan     chan *models.Node = make(chan *models.Node, cpuCoreCount-1)
+		cpuCoreCount int               = runtime.NumCPU() - 1
 		resultChan   chan *models.Node = make(chan *models.Node, 1)
 		wg           sync.WaitGroup
+		heap         minheap.SafeMinHeap = minheap.SafeMinHeap{}
+		calculation  int32
 	)
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	inputChan <- &models.Node{
+	heap.Add(&models.Node{
 		Game:  game,
 		Score: 0,
-	}
-
-	// 写入到堆里,预处理,并等待分配
-	wg.Add(1)
-	go func(inputChan, waitChan, resultChan chan *models.Node, ctx context.Context, wg *sync.WaitGroup) {
-		defer wg.Done()
-		// defer fmt.Println("dispatcher quit")
-		heap := minheap.MinHeap{}
-		calculation := 0
-		for {
-			timeout := time.After(time.Second)
-			if calculation > 1000000 {
-				resultChan <- nil
-				return
-			}
-			tmp_node := heap.Get()
-			if tmp_node == nil {
-				select {
-				case <-ctx.Done():
-					return
-				case node, ok := <-inputChan:
-					if !ok {
-						return
-					}
-					heap.Add(node)
-				case <-timeout:
-					resultChan <- nil
-					return
-				}
-			} else {
-				select {
-				case <-ctx.Done():
-					return
-				case node, ok := <-inputChan:
-					if !ok {
-						return
-					}
-					heap.Add(node)
-				case waitChan <- tmp_node:
-					calculation++
-					if calculation%10000 == 0 {
-						fmt.Println(calculation)
-					}
-					heap.Pop()
-				case <-timeout:
-					resultChan <- nil
-					return
-				}
-			}
-		}
-	}(inputChan, waitChan, resultChan, ctx, &wg)
+	})
 
 	// 启动solver
 	var cache sync.Map
-	for i := 0; i < cpuCoreCount-1; i++ {
+	for i := 0; i < cpuCoreCount; i++ {
 		wg.Add(1)
-		go ThreadSolve(inputChan, waitChan, resultChan, &cache, ctx, &wg)
+		go ThreadSolve(&heap, resultChan, &cache, ctx, &wg, &calculation)
 	}
 
 	node := <-resultChan
@@ -142,8 +89,6 @@ EMPTY:
 	for {
 		select {
 		case <-resultChan:
-		case <-waitChan:
-		case <-inputChan:
 		default:
 			break EMPTY
 		}
@@ -159,9 +104,7 @@ EMPTY:
 		actions[i], actions[j] = actions[j], actions[i]
 	}
 	wg.Wait()
-	fmt.Println("Finished")
-	close(inputChan)
-	close(waitChan)
+	fmt.Println("Finished, calculate", calculation)
 	close(resultChan)
 	return actions
 }
