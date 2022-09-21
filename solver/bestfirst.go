@@ -10,15 +10,21 @@ import (
 // 算分。Home一张10分，Free一张扣1分
 func BestFirstScore(game *models.GameStruct) int {
 	score := 0
+	homeMin := getHomeMin(game.Home)
 	for _, c := range game.Home {
-		score += c % 100
-	}
-	score = score * 10
-	for _, c := range game.Free {
-		if c != 0 {
-			score--
+		// score += c % 100
+		if c%100 <= homeMin+1 {
+			score += c % 100
+		} else {
+			score += homeMin + 1
 		}
 	}
+	// score = score * 10
+	// for _, c := range game.Free {
+	// 	if c != 0 {
+	// 		score--
+	// 	}
+	// }
 	return score
 }
 
