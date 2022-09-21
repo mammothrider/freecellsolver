@@ -1,5 +1,6 @@
 from multiprocessing.sharedctypes import Value
 import win32gui
+import pydirectinput
 import mouse
 import time
 import cv2
@@ -33,13 +34,11 @@ class Card:
             self.card[int(number)] = file
 
     def find_card(self, target):
-        tmpMax = 0
         cache = {}
         for k, v in self.card.items():
             tmp = cv2.matchTemplate(target, v, cv2.TM_CCOEFF_NORMED)
             min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(tmp)
-            if max_val > 0.70 and max_val > tmpMax:
-                tmpMax = max_val
+            if max_val > 0.70:
                 cache[k] = max_val
         return cache
 
@@ -159,7 +158,7 @@ class Solver:
         for card, loc_list in card_loc.items():
             loc_list.sort(key=lambda x: x[2])
             loc = loc_list.pop()
-            
+
             # 尝试设置牌的位置，如果位置上有牌，比较，并将更劣牌放到其次好位置
             while not set_card(loc, card):
                 cur_card = game.card[loc[0]][loc[1]]
@@ -201,7 +200,7 @@ class Solver:
 
     def call_solver(self, game: GameStruct):
         data = json.dumps(game.to_dict())
-        print(data)
+        print("'" + data.replace('"', '\"') + "'")
         result = subprocess.run(["./freecellsolver", data], capture_output=True, text=True)
         if result.stderr:
             print(result.stderr)
@@ -221,13 +220,13 @@ class Solver:
 
         start_pos = end_pos = [0, 0]
         act = action["Action"]
-        if act == "Up" or act == "Move" or act == "Free":
+        if act == "Up" or act == "Move" or act == "Free" or act == "Home":
             x = col_y[action["FCol"]] + card_width/2
-            y = row_start + gap_height * min(action["FRow"], 10) + gap_height
+            y = row_start + gap_height * min(action["FRow"], 10) + gap_height/2
             start_pos = [int(x * 2), int(y * 2)]
-        elif act == "FreeMove":
+        elif act == "FreeMove" or act == "FreeHome":
             x = free_col[action["FCol"]] + card_width/2
-            y = free_height + gap_height
+            y = free_height + gap_height/2
             start_pos = [int(x * 2), int(y * 2)]
 
         if act == "Move" or act == "FreeMove":
@@ -251,19 +250,39 @@ class Solver:
             stop = True
             print("STOP")
 
+        def drag(start_pos, end_pos):
+            pydirectinput.moveTo(x = start_pos[0], y = start_pos[1])
+            pydirectinput.mouseDown()
+            pydirectinput.PAUSE = 0.01
+
+            x = end_pos[0] - start_pos[0]
+            y = end_pos[1] - start_pos[1]
+
+            step = max(abs(x)//50, abs(y)//50, 10)
+
+            for i in range(step):
+                movx = x // step
+                movy = y // step
+                pydirectinput.move(movx, movy)
+                # time.sleep(0.001)
+
+            pydirectinput.mouseUp()
+        
         mouse.on_button(callback, buttons=(mouse.RIGHT), types=(mouse.UP))
         for index, action in enumerate(actions):
             start_pos, end_pos = self.get_pos(action)
             act = action["Action"]
-            if act == "Up" and index == 0:
+            if (act == "Up" and index == 0) or act == "Home" or act == "FreeHome":
                 mouse.move(start_pos[0], start_pos[1], True, 0.2)
                 mouse.double_click()
             elif act == "Free" or act == "Move" or act == "FreeMove":
-                # mouse.drag(start_pos[0], start_pos[1], end_pos[0], end_pos[1], True, 0.5)
-                mouse.move(start_pos[0], start_pos[1], True, 0.2)
-                mouse.click()
-                mouse.move(end_pos[0], end_pos[1], True, 0.2)
-                mouse.click()
+                # mouse.drag(start_pos[0], start_pos[1], end_pos[0], end_pos[1], True, 0.2)
+                # mouse.move(start_pos[0], start_pos[1], True, 0.2)
+                # mouse.press() not working
+                # mouse.move(end_pos[0], end_pos[1], True, 0.2)
+                # mouse.click()
+                drag(start_pos, end_pos)
+
             elif act == "Up":
                 time.sleep(0.5)
 
